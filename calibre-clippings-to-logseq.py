@@ -132,26 +132,11 @@ def sanitize_filename(filename):
     return re.sub(pattern, replacement, filename)
 
 # MAIN
-args = sys.argv.copy()
-args.pop(0)
 
-
-# clippings_file_name, clippings_file_extension = os.path.splitext(args[0]) 
-clippings_file_name, clippings_file_extension = os.path.splitext("clippings.txt") 
-output_file_name = clippings_file_name + '_to_logseq.md'
+clippings_file_name, clippings_file_extension = os.path.splitext("My Clippings - Kindle.txt") 
 
 clippings = parse_highlight_file(clippings_file_name + clippings_file_extension)
-
-# for clipping in clippings:
-#     print(f"Book: {clipping.book_title} by {clipping.author}")
-#     print(f"Page: {clipping.page}, Location: {clipping.location_start} - {clipping.location_end}")
-#     print(f"Date Added: {clipping.date}")
-#     print(f"Text:\n{clipping.text}")
-#     print(f"Note:\n{clipping.note}")
-#     print("----------")
-
 separated_by_book = separate_clippings_by_book(clippings)
-
 output_directory = "output"
 sub_block_new_line = "\n\t\t  "
 
