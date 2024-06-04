@@ -1,6 +1,7 @@
 from datetime import datetime
 import sys
 import os
+import re
 
 class Clipping:
     def __init__(self, book_title, author, page, location_start, location_end, date, text, note):
@@ -65,14 +66,14 @@ def parse_highlight_file(filename):
 
                 page = int(data_parts[0].split()[-1])  # Extract page number
                 if line.count('-') > 1:
-                    print(line)
-                    print(data_parts[1].split("location "))
+                    # print(line)
+                    # print(data_parts[1].split("location "))
                     location_data = data_parts[1].split("location ")[1].split("-")
                     location_start = int(location_data[0])
                     location_end = int(location_data[1])
                 else:
                     is_note = True
-                    print(line)
+                    # print(line)
                     location_data = data_parts[1].split("location ")[1]
                     location_start = int(location_data)
                     location_end = location_start
@@ -95,7 +96,7 @@ def parse_highlight_file(filename):
                     if relevant_clipping:
                         relevant_clipping.note = text.strip()
                     else:
-                         print(location_end)
+                        print(location_end)
 
     return clippings
 
@@ -116,6 +117,19 @@ def separate_clippings_by_book(clippings):
         books[book_title].append(clipping)
     return books
 
+
+def sanitize_filename(filename):
+    """Sanitizes a filename by replacing invalid characters with underscores.
+
+    Args:
+        filename: The filename to sanitize.
+
+    Returns:
+        The sanitized filename.
+    """
+    pattern = r"[^\w\-_\. ]{1,}"  # Match one or more characters that are not alphanumeric, underscore, hyphen, dot, or space
+    replacement = "_"
+    return re.sub(pattern, replacement, filename)
 
 # MAIN
 args = sys.argv.copy()
@@ -138,16 +152,27 @@ clippings = parse_highlight_file(clippings_file_name + clippings_file_extension)
 
 separated_by_book = separate_clippings_by_book(clippings)
 
+output_directory = "output"
 sub_block_new_line = "\n\t\t  "
-with open(output_file_name, 'wb+') as out_file:
-    output = ""
-    for book_title, book_clippings in separated_by_book.items():
-        print(book_title)
+
+for book_title, book_clippings in separated_by_book.items():
+    sanitzied_book_title = sanitize_filename(book_title)
+    directory = os.path.join(output_directory, sanitzied_book_title)
+    if not os.path.exists(directory):
+        try:
+            os.makedirs(directory)
+            # print("Directory created successfully!")
+        except OSError as error:
+            print(f"Error creating directory: {error}")
+            continue
+    new_file_path = os.path.join(directory, sanitzied_book_title)
+    with open(new_file_path + ".md", 'wb+') as out_file:
+        output = ""
+        # print(book_title)
         logseq_block = "\n\t- # [[Reference Notes]] for [[{book_title}]]\n\t\t- source::\n\t\t  url::\n\t\t- ## References:".format(book_title = book_title)
         logseq_sub_block_format = "\n\t\t\t- **Text**:\n\t\t\t  #+BEGIN_QUOTE\n\t\t\t  {text}\n\t\t\t  #+END_QUOTE\n\n\t\t\t  **Note**:\n\t\t\t  *{note}*\n\n\t\t\t  **Page**: {page}\n\t\t\t  **Location**: {location_start} - {location_end}\n\t\t\t  ---"
         for clipping in book_clippings:
-
             logseq_sub_block = logseq_sub_block_format.format(book_title, text = clipping.text.replace("\n", "\n\t\t\t  "), note = clipping.note, page = clipping.page, location_start = clipping.location_start, location_end = clipping.location_end)
             logseq_block += (logseq_sub_block)
         output += logseq_block
-    out_file.write(output.encode())
+        out_file.write(output.encode())
