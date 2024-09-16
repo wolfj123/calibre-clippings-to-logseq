@@ -3,6 +3,30 @@ import sys
 import os
 import re
 
+
+
+# TODO:
+# Handle multiple authors
+
+highlight_format = """ 
+- type:: [[highlight]]
+  book:: [[{}]]
+  author:: {}
+  date:: [[{}]]
+  time:: {}
+  page:: {}
+  location-start:: {}
+  location-end:: {}
+  tags::
+    - #+BEGIN_QUOTE
+      {}
+      #+END_QUOTE
+    - {}
+
+"""
+
+
+
 class Clipping:
     def __init__(self, book_title, author, page, location_start, location_end, date, text, note):
         self.book_title = book_title
@@ -117,7 +141,6 @@ def separate_clippings_by_book(clippings):
         books[book_title].append(clipping)
     return books
 
-
 def sanitize_filename(filename):
     """Sanitizes a filename by replacing invalid characters with underscores.
 
@@ -133,7 +156,7 @@ def sanitize_filename(filename):
 
 # MAIN
 
-clippings_file_name, clippings_file_extension = os.path.splitext("My Clippings - Kindle.txt") 
+clippings_file_name, clippings_file_extension = os.path.splitext("My Clippings.txt") 
 
 clippings = parse_highlight_file(clippings_file_name + clippings_file_extension)
 separated_by_book = separate_clippings_by_book(clippings)
@@ -153,11 +176,14 @@ for book_title, book_clippings in separated_by_book.items():
     new_file_path = os.path.join(directory, sanitzied_book_title)
     with open(new_file_path + ".md", 'wb+') as out_file:
         output = ""
-        # print(book_title)
-        logseq_block = "\n\t- # [[Reference Notes]] for [[{book_title}]]\n\t\t- source::\n\t\t  url::\n\t\t- ## References:".format(book_title = book_title)
-        logseq_sub_block_format = "\n\t\t\t- **Text**:\n\t\t\t  #+BEGIN_QUOTE\n\t\t\t  {text}\n\t\t\t  #+END_QUOTE\n\n\t\t\t  **Note**:\n\t\t\t  *{note}*\n\n\t\t\t  **Page**: {page}\n\t\t\t  **Location**: {location_start} - {location_end}\n\t\t\t  ---"
         for clipping in book_clippings:
-            logseq_sub_block = logseq_sub_block_format.format(book_title, text = clipping.text.replace("\n", "\n\t\t\t  "), note = clipping.note, page = clipping.page, location_start = clipping.location_start, location_end = clipping.location_end)
-            logseq_block += (logseq_sub_block)
-        output += logseq_block
+            authors = [clipping.author]
+            if '&' in clipping.author:
+                authors = clipping.author.split("&")    
+            elif ';' in clipping.author:
+                authors = clipping.author.split(";")    
+            authors = ['[[' + element.strip() + ']]' for element in authors]
+            authors_string = ", ".join(authors)
+            hightlight_logseq_block = highlight_format.format(book_title, authors_string, clipping.date.strftime("%d.%m.%Y"), clipping.date.strftime("%H:%M:%S"), clipping.page, clipping.location_start, clipping.location_end, clipping.text.replace("\n", "\n\t  "), clipping.note) 
+        output += hightlight_logseq_block
         out_file.write(output.encode())
