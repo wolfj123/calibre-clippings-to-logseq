@@ -5,9 +5,6 @@ import re
 
 
 
-# TODO:
-# Handle multiple authors
-
 highlight_format = """ 
 - type:: [[highlight]]
   book:: [[{}]]
