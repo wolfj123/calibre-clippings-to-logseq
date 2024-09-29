@@ -5,8 +5,7 @@ import re
 
 
 
-highlight_format = """ 
-- type:: [[highlight]]
+highlight_format = """- type:: [[highlight]]
   book:: [[{}]]
   author:: {}
   date:: [[{}]]
@@ -18,8 +17,7 @@ highlight_format = """
     - #+BEGIN_QUOTE
       {}
       #+END_QUOTE
-    - {}
-
+    {}
 """
 
 
@@ -33,7 +31,9 @@ class Clipping:
         self.location_end = location_end
         self.date = date
         self.text = text
-        self.note = note
+        self.note = ""
+        if len(note) > 0:
+            self.note = "-  " + note
 
 def find_clipping_by_location_end(clippings, location_end):
     """Finds the first clipping in the list with a matching location_end.
