@@ -136,6 +136,8 @@ def separate_clippings_by_book(clippings):
         if book_title not in books:
             books[book_title] = []
         books[book_title].append(clipping)
+    for book_title in books:
+        books[book_title] = sorted(books[book_title], key=lambda x: x.location_start)
     return books
 
 def sanitize_filename(filename):
@@ -160,6 +162,8 @@ separated_by_book = separate_clippings_by_book(clippings)
 output_directory = "output"
 sub_block_new_line = "\n\t\t  "
 
+
+
 for book_title, book_clippings in separated_by_book.items():
     sanitzied_book_title = sanitize_filename(book_title)
     directory = os.path.join(output_directory, sanitzied_book_title)
@@ -170,9 +174,11 @@ for book_title, book_clippings in separated_by_book.items():
         except OSError as error:
             print(f"Error creating directory: {error}")
             continue
-    new_file_path = os.path.join(directory, sanitzied_book_title)
-    with open(new_file_path + ".md", 'wb+') as out_file:
-        output = ""
+    file_path = os.path.join(directory, sanitzied_book_title) + ".md"
+    if os.path.exists(os.path.abspath(file_path)):
+        os.remove(file_path)
+    with open(file_path, 'ab+') as out_file:
+        text = ""
         for clipping in book_clippings:
             authors = [clipping.author]
             if '&' in clipping.author:
@@ -182,5 +188,5 @@ for book_title, book_clippings in separated_by_book.items():
             authors = ['[[' + element.strip() + ']]' for element in authors]
             authors_string = ", ".join(authors)
             hightlight_logseq_block = highlight_format.format(book_title, authors_string, clipping.date.strftime("%d.%m.%Y"), clipping.date.strftime("%H:%M:%S"), clipping.page, clipping.location_start, clipping.location_end, clipping.text.replace("\n", "\n\t  "), clipping.note) 
-        output += hightlight_logseq_block
-        out_file.write(output.encode())
+            text += hightlight_logseq_block
+        out_file.write(text.encode())
